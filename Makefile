@@ -194,12 +194,6 @@ UPROGS=\
 	$U/_wc\
 	$U/_zombie\
 	$U/_sleep\
-	$U/_pingpong\
-	$U/_find\
-	$U/_xargs\
-	$U/_primes\
-
-
 
 
 ifeq ($(LAB),$(filter $(LAB), pgtbl lock))
