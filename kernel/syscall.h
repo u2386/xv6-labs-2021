@@ -21,6 +21,7 @@
 #define SYS_mkdir  20
 #define SYS_close  21
 #define SYS_trace  22
+#define SYS_sysinfo  23
 
 #define TRACE_SYS_CALL(proc, num)\
 if(((1<<num) & proc->tracedon) > 0) {\
