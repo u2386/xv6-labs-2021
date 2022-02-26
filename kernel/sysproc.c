@@ -95,3 +95,14 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+uint64
+sys_trace(void)
+{
+  int calls;
+
+  if(argint(0, &calls) < 0)
+    return -1;
+  trace(calls);
+  return 0;
+}

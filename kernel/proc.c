@@ -313,6 +313,9 @@ fork(void)
 
   acquire(&np->lock);
   np->state = RUNNABLE;
+
+  np->tracedon = p->tracedon;
+
   release(&np->lock);
 
   return pid;
@@ -653,4 +656,13 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+void
+trace(int on)
+{
+  struct proc *p = myproc();
+  acquire(&p->lock);
+  p->tracedon = on;
+  release(&p->lock);
 }

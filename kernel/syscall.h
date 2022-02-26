@@ -20,3 +20,9 @@
 #define SYS_link   19
 #define SYS_mkdir  20
 #define SYS_close  21
+#define SYS_trace  22
+
+#define TRACE_SYS_CALL(proc, num)\
+if(((1<<num) & proc->tracedon) > 0) {\
+    printf("%d: syscall %s -> %d\n", proc->pid, syscallnames[p->trapframe->a7], p->trapframe->a0);\
+}
