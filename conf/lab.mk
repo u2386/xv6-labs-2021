@@ -1,1 +1,3 @@
-LAB=util
+LAB=\
+	util\
+	syscall\
