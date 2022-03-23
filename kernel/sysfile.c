@@ -484,3 +484,18 @@ sys_pipe(void)
   }
   return 0;
 }
+
+uint64
+sys_sigalarm(void) {
+  int ticks;
+  uint64 fn;
+  if(argint(0, &ticks) < 0 || argaddr(1, &fn) < 0){
+    return -1;
+  }
+  return sigalarm(ticks, fn);
+}
+
+uint64
+sys_sigreturn(void) {
+    return sigreturn();
+}
