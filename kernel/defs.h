@@ -170,6 +170,11 @@ uint64          walkaddr(pagetable_t, uint64);
 int             copyout(pagetable_t, uint64, char *, uint64);
 int             copyin(pagetable_t, char *, uint64, uint64);
 int             copyinstr(pagetable_t, char *, uint64, uint64);
+pte_t *         walk(pagetable_t pagetable, uint64 va, int alloc);
+uint            getref(void *pa);
+void            incref(void *pa);
+void            decref(void *pa);
+uint            handle_page_fault(pagetable_t pagetable, uint64 va);
 
 // plic.c
 void            plicinit(void);
