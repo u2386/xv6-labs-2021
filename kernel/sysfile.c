@@ -16,6 +16,8 @@
 #include "file.h"
 #include "fcntl.h"
 
+#define MAXSYMLINK 10
+
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
 static int
@@ -314,6 +316,24 @@ sys_open(void)
       end_op();
       return -1;
     }
+    if(ip->type == T_SYMLINK && (omode&O_NOFOLLOW) == 0) {
+      int depth = MAXSYMLINK;
+      iunlockput(ip);
+      while(1) {
+        if(depth-- == 0) {
+          end_op();
+          return -1;
+        }
+        if((ip = namei(ip->symlink)) == 0) {
+          end_op();
+          return -1;
+        }
+        if(ip->type != T_SYMLINK) {
+          ilock(ip);
+          break;
+        }
+      }
+    }
   }
 
   if(ip->type == T_DEVICE && (ip->major < 0 || ip->major >= NDEV)){
@@ -482,5 +502,25 @@ sys_pipe(void)
     fileclose(wf);
     return -1;
   }
+  return 0;
+}
+
+uint64
+sys_symlink(void) {
+  char target[MAXPATH], path[MAXPATH];
+  if(argstr(0, target, MAXPATH) < 0 || argstr(1, path, MAXPATH) < 0)
+    return -1;
+
+  struct inode *ip;
+
+  begin_op();
+  if((ip = create(path, T_SYMLINK, 0, 0)) == 0){
+    end_op();
+    return -1;
+  }
+
+  strncpy(ip->symlink, target, MAXPATH);
+  iunlockput(ip);
+  end_op();
   return 0;
 }
