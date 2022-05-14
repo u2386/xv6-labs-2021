@@ -15,6 +15,7 @@
 #include "sleeplock.h"
 #include "file.h"
 #include "fcntl.h"
+#include "mmap.h"
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
@@ -484,3 +485,64 @@ sys_pipe(void)
   }
   return 0;
 }
+
+
+uint64
+sys_mmap(void) {
+  uint64 addr;
+  int size,  prot,  flags, fd;
+  int offset;
+  struct file *f;
+
+  if(argaddr(0, &addr) < 0 || argint(1, &size) < 0 || argint(2, &prot) < 0 || argint(3, &flags) < 0 || argfd(4, &fd, &f) < 0 || argint(5, &offset) < 0)
+    return -1;
+  return mmap(addr, size, prot, flags, fd, offset);
+}
+
+uint64
+sys_munmap(void) {
+  uint64 addr;
+  int len;
+  if(argaddr(0, &addr) < 0 || argint(1, &len) < 0)
+    return -1;
+  return munmap(addr, len);
+}
+
+
+uint
+handle_page_fault(pagetable_t pagetable, uint64 va) {
+  uint64 pa;
+  struct vma_t *vma=0;
+  struct proc *p = myproc();
+  int r;
+  struct file *f;
+
+  if(va >= MAXVA)
+    return -1;
+
+  va = PGROUNDDOWN(va);
+  for(int i=0;i<MAXVMA;i++) {
+    if(p->vma[i].vma_start != 0 && p->vma[i].vma_start <= va && p->vma[i].vma_end >= va) {
+      vma = &p->vma[i];
+      break;
+    }
+  }
+  if(vma == 0) return -1;
+
+  if((pa = (uint64)kalloc())==0) return -1;
+  memset((void*)pa, 0, PGSIZE);
+  if(mappages(pagetable, va, PGSIZE, pa, vma->prot|PTE_U) != 0){
+    kfree((void*)pa);
+    return -1;
+  }
+
+  f = vma->f;
+  ilock(f->ip);
+  if((r = readi(f->ip, 1, va, vma->offset+(va-vma->vma_start), PGSIZE))==-1) {
+    iunlock(f->ip);
+    kfree((void*)pa);
+    return -1;
+  }
+  iunlock(f->ip);
+  return 0;
+} 

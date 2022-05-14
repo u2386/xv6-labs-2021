@@ -135,12 +135,16 @@ found:
     return 0;
   }
 
+  p->heap_end = TRAPFRAME;
+
+  memset(&p->vma, 0, sizeof(p->vma));
+
   // Set up new context to start executing at forkret,
   // which returns to user space.
   memset(&p->context, 0, sizeof(p->context));
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
-
+  
   return p;
 }
 
@@ -301,6 +305,13 @@ fork(void)
       np->ofile[i] = filedup(p->ofile[i]);
   np->cwd = idup(p->cwd);
 
+  // copy vma
+  memmove(np->vma, p->vma, sizeof(struct vma_t));
+  np->heap_end = p->heap_end;
+  for(i=0;i<MAXVMA;i++) {
+    if(p->vma[i].f) filedup(p->vma[i].f);
+  }
+  
   safestrcpy(np->name, p->name, sizeof(p->name));
 
   pid = np->pid;
@@ -351,6 +362,12 @@ exit(int status)
       fileclose(f);
       p->ofile[fd] = 0;
     }
+  }
+
+  struct vma_t *vma;
+  for(int i = 0; i < MAXVMA; i++) {
+    vma = &p->vma[i];
+    if(vma->vma_start != 0) munmap(vma->vma_start, vma->vma_end-vma->vma_start);
   }
 
   begin_op();
